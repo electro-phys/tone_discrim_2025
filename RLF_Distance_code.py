@@ -1,26 +1,15 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[43]:
 
 
 #%% file import pre procesing
 import pandas as pd
 import numpy as np
-
-
 import io 
-
 import os
 import glob
-#plots
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 import scipy.stats as stats
 from matplotlib.ticker import MaxNLocator
-
-
 from array import *
 
 
@@ -34,9 +23,6 @@ freq_ls = [1000.,  1500.,  2000.,  3000.,  4000.,  6000.,  8000., 12000.,
 db_ls = [0,10,20,30,40,50,60,70,80,90]
 
 
-# In[44]:
-
-
 ac_spks_1 = pd.read_pickle('ic_spks') # read in the data (can made using my unit extractor program link in README)
 ac_spks_2 = pd.read_pickle('ic_spks_2')
 ac_spks_3 = pd.read_pickle('ic_spks_3')
@@ -48,9 +34,6 @@ ac_spks_5 = pd.read_pickle('ic_missing_files_spks')
 ic_tuning = pd.concat([ac_spks_1,ac_spks_2,ac_spks_3,ac_spks_4,ac_spks_5])
 
 
-# In[45]:
-
-
 def count_range_in_list(ls, min, max): 
     # Initialize a counter 'ctr' to keep track of the count
     # spiks_in_range = len([ele for ele in ls if ele <= max and ele >= min])==1
@@ -59,9 +42,6 @@ def count_range_in_list(ls, min, max):
     
 
     return spiks_in_range
-
-
-# In[46]:
 
 
 def freq_rlf(tuning_fr,frequency,freq_ls,db_ls,time_low,time_hi,prestim_start):
@@ -82,10 +62,7 @@ def freq_rlf(tuning_fr,frequency,freq_ls,db_ls,time_low,time_hi,prestim_start):
         for chan in current_file['channel'].unique():
             current_file_chan = current_file.loc[current_file['channel'] == chan]
             spike_ls = current_file_chan. iloc[:, foi]# get only the frequency of interest from this current channel
-            #print(spike_ls)
-            
-            
-            
+                
             for x in range(len(db_ls)):
                 spike_count_curr_dB = 0;
                 prestim_cntr = 0;
@@ -102,19 +79,10 @@ def freq_rlf(tuning_fr,frequency,freq_ls,db_ls,time_low,time_hi,prestim_start):
                 for trial in all_trials:
                     current_trial = current_trial + 1
                     # trial is an array for PSTH 
-
                     curr_spike_sum = count_range_in_list(trial,time_low,time_hi) # counts spikes in given time range
                     prestim_spks = count_range_in_list(trial,prestim_start,time_low) # count spikes presti
                     bl_subbed = curr_spike_sum - prestim_spks # subtract baseline
-                    #
-                    #curr_spike_ind = np.where(np.logical_and(trial>=time_low, trial<=time_hi))
-                    #curr_spike_sum = len(curr_spike_ind)
-                    #print(curr_spike_sum)
 
-                    #print(curr_spike_sum)
-                    # for now just getting the spike sum from 0 to 20 ms
-                    # can also do a baseline substracted version 
-                    # can also do an standard dev version a la Dan Polley
                     spike_count_curr_dB = spike_count_curr_dB + curr_spike_sum # adding current spike count to total spike count for this intensity
                     prestim_count_curr_dB = prestim_cntr + prestim_spks
                     prestim_sec = (prestim_count_curr_dB/0.02)/30
@@ -138,15 +106,9 @@ def freq_rlf(tuning_fr,frequency,freq_ls,db_ls,time_low,time_hi,prestim_start):
                     
     
     return bulk_df
-             
-            
-            
 
 
-# In[47]:
-
-
-evoked_window_time = 0.02 #0.05 for 50ms
+evoked_window_time = 0.05
 
 new1k = freq_rlf(ic_tuning,1000,freq_ls,db_ls,0,evoked_window_time,-.05)
 new15k = freq_rlf(ic_tuning,1500,freq_ls,db_ls,0,evoked_window_time,-.05)
@@ -182,17 +144,8 @@ new_ko = pd.concat([new4k_ko,new8k_ko,new16k_ko,new24k_ko,new30k_ko,new40k_ko,ne
 new_prestim = pd.concat([new_wt,new_ko])
 
 
-# In[48]:
-
-
 thresh_df = pd.read_csv('ic_handscored_thresh_df_curated_final.csv')
 cf_df = pd.read_csv('ic_handscored_cf_df_curated_final.csv')
-
-
-# In[49]:
-
-
-import pandas as pd
 
 
 def generate_full_io_dataframe(new_prestim, cf_df):
@@ -241,9 +194,6 @@ def generate_full_io_dataframe(new_prestim, cf_df):
 new_prestim['bl_subbed'] = new_prestim['spk_sec_abs']-new_prestim['prestim_sec']
 full_io_df = generate_full_io_dataframe(new_prestim, cf_df)
 full_io_df
-
-
-# In[50]:
 
 
 # for indiivudal unit graphs
@@ -329,9 +279,8 @@ for file in files:
                 popt, pcov = curve_fit(sigmoid_gaussian, x_data, y_data, p0=initial_guess)
                 slope, threshold, y_min, y_max, x_asymp, y_fit = calculate_slope_and_threshold(popt, x_data)
 
-                rmse = calculate_rmse(y_data, y_fit)
                 r2 = r2_score(y_data,y_fit)
-                log_likelihood = calculate_log_likelihood(y_data,y_fit)
+
                 
                 result = {
                     'file': file,
@@ -343,33 +292,17 @@ for file in files:
                     'y_min': y_min,
                     'y_max': y_max,
                     'asymptote': x_asymp,
-                    'RMSE': rmse,
-                    'R2': r2,
-                    'log_like':log_likelihood
+                    'R2': r2
                 }
                 results.append(result)
-                
-                '''# Plotting the fit
-                plt.figure()
-                #plt.scatter(x_data, y_data, label=f'{genotype} data')
-                x_fit = np.linspace(min(x_data), max(x_data), 100)
-                y_fit = sigmoid_gaussian(x_fit, *popt)
-                plt.plot(x_fit, y_fit, label=f'{genotype} fit (Channel: {channel})')
-                plt.axhline(y=y_min + 0.2 * (y_max - y_min), color='r', linestyle='--', label='20% threshold')
-                plt.axhline(y=y_min + 0.8 * (y_max - y_min), color='r', linestyle='--', label='80% threshold')
-                plt.xlabel('Sound Intensity')
-                plt.xticks(np.arange(0, 85, 5))
-                plt.ylabel('Firing Rate')
-                plt.title(f'File: {file}, Genotype: {genotype}, Channel: {channel}')
-                plt.legend()
-                plt.show()'''
+                results = results.loc[results['R2'] >= -2] #RSquared cutoff
+                results = results.loc[results['slope'] > 0] # need slope to not be flat as no responsive units have this
+                results = results.loc[results['y_min'] >= 0] # bad fit would also mean y_min is less than 0 (not possible)
                 
             except RuntimeError:
                 print(f"Fit could not be performed for file {file}, genotype {genotype}, channel {channel}")
 
-# Save results to a CSV file
 results_df = pd.DataFrame(results)
-#results_df.to_csv('rlf_ful_ACx_fit_results.csv', index=False)
 
 # Print the results
 for result in results:
@@ -382,281 +315,59 @@ for result in results:
     print()
 
 
-# In[23]:
-
 
 sns.set_context("talk")
 sns.set_style("white")
-
-
 colors = ["#808080","#FF0B04" ]
 sns.set_palette(sns.color_palette(colors))
-
 fig1,ax1 = plt.subplots(figsize=(3,5))
-
-test = results_df.loc[results_df['R2'] >= -2]
-test = test.loc[test['slope'] > 0]
-
 sns.boxplot(data=test,x='genotype',y='y_max')
-
 colors = ["#000000","#FF6666" ]
 sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='y_max',size=2,palette=colors)
-
+sns.stripplot(data=results_df,x='genotype',y='y_max',size=2,palette=colors)
 sns.despine()
 plt.tight_layout()
 
-
-
-# In[24]:
-
-
-test
-ic_y_max = test[['file','genotype','channel','y_max']]
-ic_y_max.to_csv('/home/auerbach1/Documents/plot_csvs_tone_discrimfig2D_ic_y_max.csv')
-
-
-# In[25]:
-
-
 sns.set_context("talk")
 sns.set_style("white")
-
-
 colors = ["#808080","#FF0B04" ]
 sns.set_palette(sns.color_palette(colors))
-
 fig1,ax1 = plt.subplots(figsize=(3,5))
-
-test = results_df.loc[results_df['R2'] >= -2]
-test = test.loc[test['slope'] > 0]
-test = test.loc[test['y_min'] >= 0]
-
 sns.boxplot(data=test,x='genotype',y='y_min')
-
 colors = ["#000000","#FF6666" ]
 sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='y_min',size=2,palette=colors)
-
+sns.stripplot(data=results_df,x='genotype',y='y_min',size=2,palette=colors)
 sns.despine()
 plt.tight_layout()
 
 
-# In[26]:
-
-
-ic_y_min = test[['file','genotype','channel','y_min']]
-ic_y_min.to_csv('/home/auerbach1/Documents/plot_csvs_tone_discrimfig2D_ic_y_min.csv')
-
-
-# In[52]:
-
 
 sns.set_context("talk")
 sns.set_style("white")
-
-
 colors = ["#808080","#FF0B04" ]
 sns.set_palette(sns.color_palette(colors))
-
 fig1,ax1 = plt.subplots(figsize=(3,5))
-
 test = results_df.loc[results_df['R2'] >= -2]
-test = test.loc[test['slope'] < 4]
-#test = test.loc[test['RMSE'] <= 63]
-test = test.loc[test['slope'] > 0]
-test = test.loc[test['y_min'] >= 0]
-#test = test.loc[test['y_min'] >= 0]
-
 sns.boxplot(data=test,x='genotype',y='threshold')
-
 colors = ["#000000","#FF6666" ]
 sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='threshold',size=2,palette=colors)
-
+sns.stripplot(data=results_df,x='genotype',y='threshold',size=2,palette=colors)
 sns.despine()
 plt.tight_layout()
 
-
-# In[51]:
 
 
 sns.set_context("talk")
 sns.set_style("white")
-
-
 colors = ["#808080","#FF0B04" ]
 sns.set_palette(sns.color_palette(colors))
-
 fig1,ax1 = plt.subplots(figsize=(3,5))
-
-test = results_df.loc[results_df['R2'] >= -2]
-#test = test.loc[test['slope'] < 6]
-#test = test.loc[test['RMSE'] <= 63]
-test = test.loc[test['slope'] > 0]
-test = test.loc[test['y_min'] >= 0]
-
-sns.boxplot(data=test,x='genotype',y='slope')
-
+sns.boxplot(data=results_df,x='genotype',y='slope')
 colors = ["#000000","#FF6666" ]
 sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='slope',size=2,palette=colors)
-
+sns.stripplot(data=results_df,x='genotype',y='slope',size=2,palette=colors)
 sns.despine()
 plt.tight_layout()
-
-
-# In[60]:
-
-
-test = pd.read_csv('ic_params_io_rlf_final.csv')
-test = test[['file','genotype','channel','slope','threshold','y_min','y_max']]
-test['gain'] = test['slope']
-test = test[['file','genotype','channel','gain','threshold','y_min','y_max']]
-test
-
-
-# In[64]:
-
-
-def get_rat_id_from_tank(file_name, t1):
-    """
-    Extract rat ID from the 'Subject' column of t1 dataframe based on matching 'Tank' entries
-    in the file_name.
-
-    Parameters:
-    -----------
-    file_name : str
-        The file name to check against Tank entries
-    t1 : pandas.DataFrame
-        DataFrame containing 'Tank' and 'Subject' columns
-
-    Returns:
-    --------
-    str or None
-        The rat ID from the 'Subject' column if a match is found, otherwise None
-    """
-    # Ensure t1 has the required columns
-    if 'Tank' not in t1.columns or 'Subject' not in t1.columns:
-        print("Error: t1 dataframe must contain 'Tank' and 'Subject' columns")
-        return None
-
-    # Iterate through each row in t1
-    for _, row in t1.iterrows():
-        # Check if the Tank entry exists as a substring in file_name
-        if str(row['Tank']) in file_name:
-            # Return the Subject as rat_id
-            return str(row['Subject'])
-
-    # If no match is found
-    print(f"Warning: No matching Tank entry found in t1 for {file_name}")
-    return None
-
-def add_rat_id_column(results_df, t1_df):
-    """
-    Add a 'rat_id' column to the results dataframe by extracting rat IDs from filenames
-    using the get_rat_id_from_tank function.
-
-    Parameters:
-    -----------
-    results_df : pandas.DataFrame
-        The dataframe containing the 'file' column
-    t1_df : pandas.DataFrame
-        DataFrame containing 'Tank' and 'Subject' columns
-
-    Returns:
-    --------
-    pandas.DataFrame
-        The results dataframe with the added 'rat_id' column
-    """
-    # Check if 'file' column exists in the results dataframe
-    if 'file' not in results_df.columns:
-        raise ValueError("Error: results_df must contain a 'file' column")
-
-    # Apply the get_rat_id_from_tank function to each file in the dataframe
-    results_df['rat_id'] = results_df['file'].apply(
-        lambda file_name: get_rat_id_from_tank(file_name, t1_df)
-    )
-
-    return results_df
-
-# Example usage:
-t1 = pd.read_excel('/media/auerbach1/Auerbach_HD_WG/Fmr1 SD Tanks/fmr1_sd_tank_info (copy).xlsx')
-test_rat = add_rat_id_column(test, t1)
-test_rat.rat_id.unique()
-
-test_rat.to_csv('fig2DF_ic_io_params.csv')
-
-
-# In[59]:
-
-
-sns.set_context("talk")
-sns.set_style("white")
-
-
-colors = ["#808080","#FF0B04" ]
-sns.set_palette(sns.color_palette(colors))
-
-fig1,ax1 = plt.subplots(figsize=(3,5))
-
-#test = test.loc[test['R2'] >= -2]
-#test = test.loc[test['slope'] < 6]
-#test = test.loc[test['RMSE'] <= 63]
-#test = test.loc[test['slope'] > 0]
-#test = test.loc[test['y_min'] >= 0]
-
-sns.boxplot(data=test,x='genotype',y='threshold')
-
-colors = ["#000000","#FF6666" ]
-sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='threshold',size=2,palette=colors)
-
-sns.despine()
-plt.tight_layout()
-
-
-# In[54]:
-
-
-sns.set_context("talk")
-sns.set_style("white")
-
-
-colors = ["#808080","#FF0B04" ]
-sns.set_palette(sns.color_palette(colors))
-
-fig1,ax1 = plt.subplots(figsize=(3,5))
-
-#test = test.loc[test['R2'] >= -2]
-#test = test.loc[test['slope'] < 6]
-#test = test.loc[test['RMSE'] <= 63]
-#test = test.loc[test['slope'] > 0]
-#test = test.loc[test['y_min'] >= 0]
-
-sns.boxplot(data=test,x='genotype',y='slope')
-
-colors = ["#000000","#FF6666" ]
-sns.set_palette(sns.color_palette(colors))
-sns.stripplot(data=test,x='genotype',y='slope',size=2,palette=colors)
-
-sns.despine()
-plt.tight_layout()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 
