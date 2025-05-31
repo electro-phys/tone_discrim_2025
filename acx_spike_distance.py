@@ -15,8 +15,8 @@ freq_ls = [1000.,  1500.,  2000.,  3000.,  4000.,  6000.,  8000., 12000.,
     16000., 20000., 24000., 30000., 35000., 40000., 45000., 50000.,
     55000., 60000., 65000.]
 db_ls = [0,10,20,30,40,50,60,70,80,90]
-cf_df = pd.read_csv('acx_handscored_cf_df_curated_final.csv')
-thresh_df = pd.read_csv('acx_handscored_thresh_df_curated_final.csv')
+cf_df = pd.read_csv('acx_cf_df.csv')
+thresh_df = pd.read_csv('acx_thresh_df.csv')
 
 
 def get_distance_for_CF(CF_cell, current_cell, edges, sanity):
